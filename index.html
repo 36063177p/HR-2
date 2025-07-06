@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#667eea">
+    <title>💼 الشهباء - إدارة الموارد البشرية</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="supabase-styles.css">
+</head>
+<body>
+    <div class="container">
+        <div id="loginContainer" class="login-container">
+            <h1 style="color: #ffc107; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">🏢 مجموعة الشهباء التجارية</h1>
+            <h2 style="color: white;">نظام إدارة الموارد البشرية</h2>
+            
+            <div class="login-box">
+                <h3>تسجيل الدخول</h3>
+                <form id="loginForm" onsubmit="authenticate(event)">
+                    <div class="form-group">
+                        <label for="username">اسم المستخدم:</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">كلمة المرور:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit">دخول</button>
+                </form>
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- صفحة المدير -->
+        <div class="dashboard" id="managerDashboard" style="display: none;">
+            <div class="header" style="background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);">
+                <h1>🏢 <span style="color: #ffc107;">مجموعة الشهباء التجارية</span> - لوحة الإدارة</h1>
+                <div class="header-buttons">
+                    <button class="sync-btn" onclick="reloadDataFromSupabase()" title="تحديث البيانات من Supabase">
+                        🔄 تحديث البيانات
+                    </button>
+                    <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
+                </div>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('employees')">👥 إدارة الموظفين</button>
+                <button class="tab-btn" onclick="showTab('reports')">📊 التقارير</button>
+                <button class="tab-btn" onclick="showTab('finance')">💰 الشؤون المالية</button>
+                <button class="tab-btn" onclick="showTab('locations')">📍 إدارة المواقع</button>
+                <button class="tab-btn" onclick="showTab('supabaseConfig')">🚀 قاعدة البيانات</button>
+            </div>
+
+            <!-- إدارة الموظفين -->
+            <div class="tab-content active" id="employees">
+                <div class="section">
+                    <h3>👤 إضافة موظف جديد - <span style="color: #ffc107;">مجموعة الشهباء التجارية</span></h3>
+                    <form id="addEmployeeForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="empName">الاسم:</label>
+                                <input type="text" id="empName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="empUsername">اسم المستخدم:</label>
+                                <input type="text" id="empUsername" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="empPassword">كلمة المرور:</label>
+                                <input type="password" id="empPassword" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="empPosition">المنصب:</label>
+                                <input type="text" id="empPosition" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="empSalary">الراتب:</label>
+                                <input type="number" id="empSalary" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="empCurrency">العملة:</label>
+                                <select id="empCurrency" required>
+                                    <option value="">اختر العملة</option>
+                                    <option value="SAR">ريال سعودي (SAR)</option>
+                                    <option value="USD">دولار أمريكي (USD)</option>
+                                    <option value="SYP">ليرة سورية (SYP)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="empBranch">الفرع:</label>
+                                <select id="empBranch" required>
+                                    <option value="">اختر الفرع</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit">إضافة موظف</button>
+                    </form>
+                </div>
+
+                <div class="section">
+                    <h3>قائمة الموظفين</h3>
+                    <div class="table-container">
+                        <table id="employeesTable">
+                            <thead>
+                                <tr>
+                                    <th>الاسم</th>
+                                    <th>المنصب</th>
+                                    <th>الراتب</th>
+                                    <th>العملة</th>
+                                    <th>الفرع</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeesTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- التقارير -->
+            <div class="tab-content" id="reports">
+                <div class="section">
+                    <h3>التقرير الأسبوعي</h3>
+                    <div class="week-info" style="background: #e8f5e8; padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #28a745;">
+                        <h5 style="color: #155724; margin: 0 0 5px 0;">📅 نظام الأسبوع العربي</h5>
+                        <p style="margin: 0; font-size: 14px; color: #155724;">
+                            <strong>الأسبوع يبدأ من السبت وينتهي بالخميس</strong> - الجمعة عطلة أسبوعية رسمية
+                        </p>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reportWeek">اختر الأسبوع:</label>
+                            <input type="week" id="reportWeek">
+                        </div>
+                        <button onclick="generateWeeklyReport()">إنشاء التقرير</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="weeklyReportTable">
+                            <thead>
+                                <tr>
+                                    <th>الموظف</th>
+                                    <th>المنصب</th>
+                                    <th>الراتب الشهري</th>
+                                    <th>العملة</th>
+                                    <th>إجمالي الوقت</th>
+                                    <th>أيام الحضور</th>
+                                    <th>المبلغ المستحق</th>
+                                    <th>التفاصيل</th>
+                                </tr>
+                            </thead>
+                            <tbody id="weeklyReportTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="section" id="employeeDetailSection" style="display: none;">
+                    <h3>تفاصيل حضور الموظف</h3>
+                    <div class="employee-detail-header">
+                        <div>
+                            <h4 id="detailEmployeeName"></h4>
+                            <p id="detailEmployeeInfo"></p>
+                        </div>
+                        <div class="action-buttons">
+                            <button onclick="printEmployeeReport()" class="action-btn" style="background: #28a745;">طباعة التقرير</button>
+                            <button onclick="hideEmployeeDetail()" class="action-btn">إغلاق التفاصيل</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="employeeDetailTable">
+                                                         <thead>
+                                 <tr>
+                                     <th>التاريخ</th>
+                                     <th>اليوم</th>
+                                     <th>وقت الحضور</th>
+                                     <th>وقت الانصراف</th>
+                                     <th>إجمالي الوقت</th>
+                                     <th>قيمة اليوم</th>
+                                     <th>الإجراءات</th>
+                                 </tr>
+                             </thead>
+                            <tbody id="employeeDetailTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="summary-section">
+                        <div class="summary-card">
+                            <h4>ملخص الأسبوع</h4>
+                            <div id="weekSummary"></div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            <!-- الشؤون المالية -->
+            <div class="tab-content" id="finance">
+                <div class="section">
+                    <h3>إدارة الخصومات والسلف</h3>
+                    <form id="financeForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="financeEmployee">الموظف:</label>
+                                <select id="financeEmployee" required>
+                                    <option value="">اختر موظف</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="financeType">النوع:</label>
+                                <select id="financeType" required>
+                                    <option value="">اختر النوع</option>
+                                    <option value="deduction">خصم</option>
+                                    <option value="advance">سلفة</option>
+                                    <option value="payment">تسليم راتب</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="financeAmount">المبلغ:</label>
+                                <input type="number" id="financeAmount" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="financeReason">السبب:</label>
+                            <input type="text" id="financeReason" required>
+                        </div>
+                        <button type="submit">إضافة</button>
+                    </form>
+                </div>
+
+                <div class="section">
+                    <h3>سجل الخصومات والسلف</h3>
+                    <div class="table-container">
+                        <table id="financeTable">
+                            <thead>
+                                <tr>
+                                    <th>الموظف</th>
+                                    <th>النوع</th>
+                                    <th>المبلغ</th>
+                                    <th>السبب</th>
+                                    <th>التاريخ</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="financeTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- إدارة المواقع -->
+            <div class="tab-content" id="locations">
+                <div class="section">
+                    <h3>إضافة فرع جديد</h3>
+                    <form id="addBranchForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="branchName">اسم الفرع:</label>
+                                <input type="text" id="branchName" required placeholder="مثال: الفرع الرئيسي">
+                            </div>
+                            <div class="form-group">
+                                <label for="branchAddress">العنوان:</label>
+                                <input type="text" id="branchAddress" required placeholder="مثال: الرياض، حي الملز">
+                            </div>
+                        </div>
+                        
+                        <div class="location-section">
+                            <h4>تحديد الموقع الجغرافي</h4>
+                            <p style="font-size: 14px; color: #666; margin: 10px 0; padding: 10px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
+                                🎯 <strong>نصيحة مهمة:</strong> للحصول على أفضل دقة، تأكد من وجودك في موقع الفرع المراد إضافته قبل الضغط على "استخدام موقعي الحالي"
+                            </p>
+                            <div class="location-methods">
+                                <button type="button" class="location-btn" onclick="getCurrentLocationForBranch()">
+                                    📍 استخدام موقعي الحالي
+                                </button>
+                                <button type="button" class="location-btn" onclick="showManualLocationInput()">
+                                    ✏️ إدخال إحداثيات يدوياً
+                                </button>
+                            </div>
+                            
+                            <div class="form-row" id="manualLocationInputs" style="display: none;">
+                                <div class="form-group">
+                                    <label for="branchLatitude">خط العرض (Latitude):</label>
+                                    <input type="number" id="branchLatitude" step="any" placeholder="24.7136">
+                                </div>
+                                <div class="form-group">
+                                    <label for="branchLongitude">خط الطول (Longitude):</label>
+                                    <input type="number" id="branchLongitude" step="any" placeholder="46.6753">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="branchRadius">نطاق الحضور (بالمتر):</label>
+                                <input type="number" id="branchRadius" value="100" min="50" max="500" required>
+                                <small>المسافة المسموحة من نقطة الفرع لتسجيل الحضور</small>
+                            </div>
+                            
+                            <!-- إدارة شبكات WiFi -->
+                            <div class="form-group" style="border-top: 1px solid #dee2e6; padding-top: 15px; margin-top: 15px;">
+                                <label style="font-weight: bold; color: #17a2b8;">📶 شبكات WiFi المقبولة (طوال ساعات العمل):</label>
+                                <div style="background: #d1ecf1; padding: 10px; border-radius: 5px; margin: 10px 0; font-size: 14px;">
+                                    <strong>📶 متاحة من 6 صباحاً إلى 11 مساءً</strong><br>
+                                    <small>أضف أسماء شبكات WiFi التي يمكن للموظفين استخدامها في هذا الفرع</small>
+                                </div>
+                                <div style="display: flex; gap: 5px; margin: 10px 0;">
+                                    <input type="text" id="wifiNetworkName" placeholder="اسم شبكة WiFi" 
+                                           style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
+                                           onkeypress="if(event.key==='Enter') addWiFiNetworkToForm()">
+                                    <button type="button" onclick="addWiFiNetworkToForm()" 
+                                            style="padding: 8px 15px; background: #17a2b8; color: white; border: none; border-radius: 4px;">
+                                        ➕ إضافة
+                                    </button>
+                                </div>
+                                <div id="wifiNetworksList" style="margin: 10px 0; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; min-height: 40px;">
+                                    <small style="color: #666;">📶 شبكات WiFi المضافة ستظهر هنا...</small>
+                                </div>
+                            </div>
+                            
+                            <div class="current-location-display" id="currentLocationDisplay" style="display: none;">
+                                <h5>الموقع المحدد:</h5>
+                                <p id="selectedLocationText"></p>
+                                <div class="location-accuracy" id="locationAccuracy"></div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit">إضافة الفرع</button>
+                    </form>
+                </div>
+
+                <div class="section">
+                    <h3>قائمة الفروع</h3>
+                    <div class="table-container">
+                        <table id="branchesTable">
+                            <thead>
+                                <tr>
+                                    <th>اسم الفرع</th>
+                                    <th>العنوان</th>
+                                    <th>الإحداثيات</th>
+                                    <th>نطاق الحضور</th>
+                                    <th>شبكات WiFi</th>
+                                    <th>عدد الموظفين</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="branchesTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>📶 إدارة شبكات WiFi للفروع</h3>
+                    <div style="background: #d1ecf1; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #17a2b8;">
+                        <h5 style="margin-top: 0; color: #0c5460;">📶 متاحة طوال ساعات العمل (6ص - 11م)</h5>
+                        <p style="margin: 10px 0;">
+                            حدد شبكات WiFi المقبولة لكل فرع. الموظفون يمكنهم تسجيل الحضور عند الاتصال بهذه الشبكات طوال ساعات العمل.
+                        </p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="selectBranchForWifi">اختر الفرع:</label>
+                        <select id="selectBranchForWifi" onchange="loadBranchWiFiNetworks()" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-left: 10px;">
+                            <option value="">-- اختر فرع --</option>
+                        </select>
+                    </div>
+                    
+                    <div id="wifiManagementSection" style="display: none; margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <h5 id="selectedBranchName" style="color: #17a2b8; margin-top: 0;"></h5>
+                        
+                        <div style="display: flex; gap: 10px; margin: 15px 0; align-items: center;">
+                            <input type="text" id="newWifiNetworkName" placeholder="اسم شبكة WiFi الجديدة" 
+                                   style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"
+                                   onkeypress="if(event.key==='Enter') addWiFiNetworkToBranch()">
+                            <button onclick="addWiFiNetworkToBranch()" 
+                                    style="padding: 10px 20px; background: #17a2b8; color: white; border: none; border-radius: 4px;">
+                                ➕ إضافة شبكة
+                            </button>
+                        </div>
+                        
+                        <div id="branchWifiNetworksList" style="margin: 15px 0;">
+                            <!-- ستتم تعبئتها بالجافا سكريبت -->
+                        </div>
+                        
+                        <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0; font-size: 14px;">
+                            💡 <strong>نصائح مهمة:</strong><br>
+                            • أضف الاسم الكامل للشبكة بدقة تامة (حساس للأحرف الكبيرة والصغيرة)<br>
+                            • يمكن إضافة عدة شبكات للفرع الواحد<br>
+                            • الشبكات ستكون متاحة للموظفين من 6 صباحاً إلى 11 مساءً<br>
+                            • ⚠️ يجب أن يطابق اسم الشبكة المدخل اسمها الحقيقي بالضبط
+                        </div>
+                        
+                        <div style="background: #d4edda; padding: 10px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #28a745; font-size: 14px;">
+                            <strong>🔍 كيف يعمل النظام الجديد:</strong><br>
+                            1. الموظف يدخل اسم شبكة WiFi التي يتصل بها<br>
+                            2. النظام يقارن الاسم مع الشبكات المُسجلة للفروع<br>
+                            3. إذا تطابق الاسم، يُسمح بتسجيل الحضور<br>
+                            4. إذا لم يتطابق، يتم رفض تسجيل الحضور
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>📱 إدارة QR Codes للحضور</h3>
+                    <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #28a745;">
+                        <h5 style="margin-top: 0; color: #28a745;">🎯 حلول الحضور العملية - بدون تعقيد!</h5>
+                        <div style="background: #d1ecf1; padding: 10px; border-radius: 5px; margin: 10px 0; text-align: center;">
+                            <strong>💡 أربع طرق عملية:</strong> GPS + QR Code + WiFi + كلمة سر يومية
+                        </div>
+                        <p style="margin: 10px 0;">
+                            <strong>المشكلة:</strong> GPS وحده غير دقيق أحياناً ويحتاج بدائل عملية<br>
+                            <strong>الحلول:</strong> أربع طرق مختلفة يختار الموظف الأنسب حسب الوضع
+                        </p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin: 15px 0;">
+                            <div style="background: white; padding: 12px; border-radius: 5px; border-left: 3px solid #007bff;">
+                                <h6 style="margin-top: 0; color: #007bff;">📍 الموقع الجغرافي</h6>
+                                <ul style="font-size: 13px; margin: 5px 0;">
+                                    <li>✅ دقيق في الأماكن المفتوحة</li>
+                                    <li>⚡ تلقائي وسريع</li>
+                                    <li>📱 يعمل على جميع الهواتف</li>
+                                </ul>
+                            </div>
+                            <div style="background: white; padding: 12px; border-radius: 5px; border-left: 3px solid #28a745;">
+                                <h6 style="margin-top: 0; color: #28a745;">📅 QR Code يومي</h6>
+                                <ul style="font-size: 13px; margin: 5px 0;">
+                                    <li>✅ دقة 100% - لا غش</li>
+                                    <li>⏰ صالح ليوم كامل</li>
+                                    <li>🖨️ طباعة واحدة يومياً</li>
+                                </ul>
+                            </div>
+                            <div style="background: white; padding: 12px; border-radius: 5px; border-left: 3px solid #17a2b8;">
+                                <h6 style="margin-top: 0; color: #17a2b8;">📶 شبكة WiFi</h6>
+                                <ul style="font-size: 13px; margin: 5px 0;">
+                                    <li>✅ ذكي - يكتشف تلقائياً</li>
+                                    <li>🏢 مثالي للمكاتب</li>
+                                    <li>🕕 متاح 6ص - 11م</li>
+                                    <li>🔧 إعداد بسيط</li>
+                                </ul>
+                            </div>
+                                                         <div style="background: white; padding: 12px; border-radius: 5px; border-left: 3px solid #ffc107;">
+                                 <h6 style="margin-top: 0; color: #e67e22;">🔑 كلمة سر يومية</h6>
+                                 <ul style="font-size: 13px; margin: 5px 0;">
+                                     <li>✅ <strong>بديل بسيط وعملي</strong></li>
+                                     <li>🔄 متاحة دائماً</li>
+                                     <li>🗣️ تُعلن في المكتب</li>
+                                     <li>🚫 لا تقنية معقدة</li>
+                                 </ul>
+                             </div>
+                         </div>
+                         
+                         <!-- جدول الأوقات المناسبة -->
+                         <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; border: 1px solid #dee2e6;">
+                             <h6 style="margin-top: 0; color: #495057; text-align: center;">⏰ التوزيع الزمني الذكي للطرق</h6>
+                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 10px 0;">
+                                 <div style="background: #d1ecf1; padding: 10px; border-radius: 5px; text-align: center; border-left: 4px solid #17a2b8;">
+                                     <strong>📶 ساعات العمل (6ص - 11م)</strong><br>
+                                     <small>WiFi Detection - الخيار الأساسي</small>
+                                 </div>
+                                 <div style="background: #d4edda; padding: 10px; border-radius: 5px; text-align: center; border-left: 4px solid #28a745;">
+                                     <strong>🌃 حالات خاصة (11م - 6ص)</strong><br>
+                                     <small>QR Code</small>
+                                 </div>
+                                 <div style="background: #fff3cd; padding: 10px; border-radius: 5px; text-align: center; border-left: 4px solid #ffc107;">
+                                     <strong>🔑 كلمة السر اليومية</strong><br>
+                                     <small>متاحة دائماً كبديل</small>
+                                 </div>
+                                 <div style="background: #cce5ff; padding: 10px; border-radius: 5px; text-align: center; border-left: 4px solid #007bff;">
+                                     <strong>📍 الموقع الجغرافي</strong><br>
+                                     <small>متاح دائماً كبديل</small>
+                                 </div>
+                             </div>
+                         </div>
+                         
+                         <div style="background: #d1ecf1; padding: 10px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #17a2b8; text-align: center;">
+                             <strong>📶 WiFi Detection:</strong> الطريقة الأساسية لمعظم ساعات العمل (6ص - 11م)!<br>
+                             <small>الطرق الأخرى متاحة دائماً كبدائل</small>
+                         </div>
+                    </div>
+                    
+                    <div class="qr-management" style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                        <h4>🏢 إنشاء QR Codes للفروع</h4>
+                        
+                        <!-- ملاحظة التوزيع الزمني -->
+                        <div style="background: #d4edda; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #28a745;">
+                            <h6 style="margin-top: 0; color: #155724;">📋 التوزيع الزمني الذكي المُطبق</h6>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 14px;">
+                                <div><strong>📶 ساعات العمل:</strong> WiFi Detection (6ص - 11م)</div>
+                                <div><strong>🌃 حالات خاصة:</strong> QR Code (11م - 6ص)</div>
+                                <div><strong>🔑 بديل:</strong> كلمة السر اليومية</div>
+                                <div><strong>📍 بديل:</strong> الموقع الجغرافي</div>
+                            </div>
+                        </div>
+                        
+                        <div id="branchQRList" style="margin: 20px 0;">
+                            <!-- سيتم ملؤها بالجافا سكريبت -->
+                        </div>
+                        <button onclick="generateAllDailyQRs()" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; margin: 10px 5px;">
+                            🌃 إنشاء QR Codes للحالات الخاصة (11م - 6ص)
+                        </button>
+                        <button onclick="showTodayPassword()" style="padding: 10px 20px; background: #ffc107; color: black; border: none; border-radius: 5px; margin: 10px 5px;">
+                            🔑 عرض كلمة السر اليومية (بديل)
+                        </button>
+                        <button onclick="showPasswordManagement()" style="padding: 10px 20px; background: #17a2b8; color: white; border: none; border-radius: 5px; margin: 10px 5px;">
+                            🛠️ إدارة كلمات السر
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>اختبار الموقع</h3>
+                    <p>يمكنك اختبار تحديد الموقع الجغرافي وفحص فروع الشركة:</p>
+                    
+                    <div class="button-group" style="margin-bottom: 15px;">
+                        <button class="test-location-btn" onclick="testLocationAccess()">
+                            🧪 اختبار تحديد الموقع
+                        </button>
+                        <button class="test-location-btn" onclick="testCurrentLocation()">
+                            📍 اختبار موقعي مع الفروع
+                        </button>
+                    </div>
+                    
+                    <div id="locationTestResult" class="test-result"></div>
+                    
+                    <div class="location-help" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #17a2b8;">
+                        <h5 style="color: #17a2b8; margin-top: 0;">💡 مشاكل شائعة في تحديد الموقع:</h5>
+                        
+                        <div style="margin: 10px 0;">
+                            <strong>🚫 إذا كانت الصلاحيات مرفوضة:</strong>
+                            <ul style="margin: 5px 0 10px 20px; font-size: 14px;">
+                                <li>اضغط على أيقونة 🔒 أو 🌐 بجانب رابط الموقع</li>
+                                <li>اختر "السماح" للموقع الجغرافي</li>
+                                <li>أعد تحميل الصفحة</li>
+                            </ul>
+                        </div>
+                        
+                        <div style="margin: 10px 0;">
+                            <strong>📶 إذا كان الموقع غير متاح:</strong>
+                            <ul style="margin: 5px 0 10px 20px; font-size: 14px;">
+                                <li>تأكد من تفعيل GPS في الجهاز</li>
+                                <li>اخرج إلى مكان مفتوح (بعيداً عن المباني)</li>
+                                <li>تأكد من الاتصال بالإنترنت</li>
+                                <li>أغلق VPN إذا كان مفعلاً</li>
+                            </ul>
+                        </div>
+                        
+                        <div style="margin: 10px 0;">
+                            <strong>⏰ إذا انتهت مهلة الوقت:</strong>
+                            <ul style="margin: 5px 0 10px 20px; font-size: 14px;">
+                                <li>جرب مرة أخرى في مكان مفتوح</li>
+                                <li>انتظر قليلاً ثم أعد المحاولة</li>
+                                <li>استخدم "إدخال إحداثيات يدوياً" كبديل</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- صفحة الموظف -->
+        <div class="dashboard" id="employeeDashboard" style="display: none;">
+            <div class="header" style="background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);">
+                <h1>🏢 <span style="color: #ffc107;">مجموعة الشهباء التجارية</span> - بوابة الموظف</h1>
+                <div class="user-info">
+                    <span id="employeeName"></span> - <span id="employeePosition"></span>
+                </div>
+                <div class="header-buttons">
+                    <button class="sync-btn" onclick="reloadDataFromSupabase()" title="تحديث البيانات من Supabase">
+                        🔄 تحديث
+                    </button>
+                    <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
+                </div>
+            </div>
+
+            <div class="section">
+                                        <h3>🏢 تسجيل الحضور - <span style="color: #ffc107;">مجموعة الشهباء التجارية</span></h3>
+                <div class="attendance-section">
+                    <div class="current-time">
+                        <div id="currentTime"></div>
+                        <div id="currentDate"></div>
+                    </div>
+                    
+                    <!-- تسجيل الحضور عبر الموقع الجغرافي -->
+                    <div class="shahba-attendance-section" style="margin: 20px 0; padding: 25px; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); border-radius: 15px; box-shadow: 0 10px 30px rgba(30, 60, 114, 0.3);">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <div style="display: inline-block; background: rgba(255,255,255,0.15); padding: 15px; border-radius: 50%; margin-bottom: 15px;">
+                                <span style="font-size: 48px;">📍</span>
+                            </div>
+                            <h4 style="margin: 0; color: white; font-size: 20px; font-weight: 600;">تسجيل الحضور الذكي</h4>
+                            <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">نظام تحديد الموقع الجغرافي المتطور</p>
+                        </div>
+                        
+                        <div class="location-status" id="locationStatus" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px solid rgba(255,255,255,0.2);">
+                            <div style="text-align: center; color: white;">
+                                <div style="font-size: 24px; margin-bottom: 10px;">🔍</div>
+                                <p style="margin: 0; font-size: 16px;">جاري التحقق من موقعك...</p>
+                            </div>
+                        </div>
+                        
+                        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #28a745;">
+                            <h6 style="margin-top: 0; color: #ffc107; font-weight: 600;">🎯 مجموعة الشهباء التجارية</h6>
+                            <p style="margin: 5px 0; color: rgba(255,255,255,0.9); font-size: 14px;">
+                                نظام متطور لضمان دقة تسجيل الحضور من مواقع العمل المعتمدة
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="attendance-buttons">
+                        <button class="attendance-btn checkin shahba-btn-primary" onclick="checkIn()">
+                            <span>📥</span> تسجيل حضور
+                        </button>
+                        <button class="attendance-btn checkout shahba-btn-secondary" onclick="checkOut()">
+                            <span>📤</span> تسجيل انصراف
+                        </button>
+                    </div>
+                    
+
+                    <div class="today-status" id="todayStatus"></div>
+                </div>
+            </div>
+
+            <div class="section">
+                                    <h3>📋 سجل الحضور - <span style="color: #ffc107;">مجموعة الشهباء التجارية</span></h3>
+                <div class="table-container">
+                    <table id="attendanceTable">
+                        <thead>
+                            <tr>
+                                <th>التاريخ</th>
+                                <th>وقت الحضور</th>
+                                <th>وقت الانصراف</th>
+                                <th>إجمالي الساعات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- البيان المالي للموظف -->
+            <div id="employeeFinancialReport" class="dashboard-section" style="display: none;">
+                <h2>📊 البيان المالي الأسبوعي</h2>
+                
+
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 15px 0;">
+                    <!-- معلومات الموظف المالية -->
+                    <div class="financial-overview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div class="financial-card" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid rgba(255,255,255,0.2);">
+                            <h4 style="margin: 0; font-size: 14px;">💰 الراتب الشهري</h4>
+                            <p style="margin: 5px 0; font-size: 20px; font-weight: bold;" id="employeeSalaryDisplay">-- --</p>
+                            <small id="employeeCurrencyDisplay">SAR</small>
+                        </div>
+                        <div class="financial-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid rgba(255,255,255,0.2);">
+                            <h4 style="margin: 0; font-size: 14px;">⏱️ معدل الساعة</h4>
+                            <p style="margin: 5px 0; font-size: 20px; font-weight: bold;" id="hourlyRateDisplay">-- --</p>
+                            <small>بالساعة</small>
+                        </div>
+                        <div class="financial-card" style="background: linear-gradient(135deg, #c9a96e 0%, #ddbf85 100%); color: #333; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid rgba(0,0,0,0.1);">
+                            <h4 style="margin: 0; font-size: 14px;">📅 معدل اليوم</h4>
+                            <p style="margin: 5px 0; font-size: 20px; font-weight: bold;" id="dailyRateDisplay">-- --</p>
+                            <small>باليوم</small>
+                        </div>
+                    </div>
+
+                    <!-- اختيار الأسبوع -->
+                    <div class="week-selector" style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #dee2e6;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <label for="employeeWeekSelect" style="font-weight: bold; color: #495057;">📅 اختر الأسبوع:</label>
+                                <input type="week" id="employeeWeekSelect" style="padding: 8px; border: 1px solid #007bff; border-radius: 4px;" onchange="loadEmployeeFinancialReport()">
+                            </div>
+                                                    <button onclick="loadEmployeeFinancialReport()" class="modern-btn primary">
+                            <i class="icon">📊</i>
+                            <span>تحديث البيان</span>
+                        </button>
+                        </div>
+                        <div class="week-info-card">
+                            <div class="info-icon">📅</div>
+                            <div class="info-text">
+                                <span class="info-title">نظام الأسبوع العربي</span>
+                                <span class="info-subtitle">السبت إلى الخميس</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- البيان المالي الأسبوعي -->
+                    <div class="weekly-financial-report" id="weeklyFinancialReport">
+                        <div class="financial-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 15px 0;">
+                            <div class="summary-item" style="background: #fff3cd; padding: 12px; border-radius: 6px; text-align: center; border-left: 4px solid #ffc107;">
+                                <small style="color: #856404; font-weight: bold;">⏱️ ساعات العمل</small>
+                                <p style="margin: 5px 0; font-size: 18px; font-weight: bold; color: #856404;" id="totalWorkHours">0:00:00</p>
+                            </div>
+                            <div class="summary-item" style="background: #d4edda; padding: 12px; border-radius: 6px; text-align: center; border-left: 4px solid #28a745;">
+                                <small style="color: #155724; font-weight: bold;">💰 المبلغ المستحق</small>
+                                <p style="margin: 5px 0; font-size: 18px; font-weight: bold; color: #155724;" id="totalEarnings">0.00</p>
+                            </div>
+                            <div class="summary-item" style="background: #f8d7da; padding: 12px; border-radius: 6px; text-align: center; border-left: 4px solid #dc3545;">
+                                <small style="color: #721c24; font-weight: bold;">➖ الخصومات</small>
+                                <p style="margin: 5px 0; font-size: 18px; font-weight: bold; color: #721c24;" id="totalDeductions">0.00</p>
+                            </div>
+                            <div class="summary-item" style="background: #cce5ff; padding: 12px; border-radius: 6px; text-align: center; border-left: 4px solid #007bff;">
+                                <small style="color: #004085; font-weight: bold;">➕ السلف</small>
+                                <p style="margin: 5px 0; font-size: 18px; font-weight: bold; color: #004085;" id="totalAdvances">0.00</p>
+                            </div>
+                            <div class="summary-item" style="background: #d1ecf1; padding: 12px; border-radius: 6px; text-align: center; border-left: 4px solid #17a2b8;">
+                                <small style="color: #0c5460; font-weight: bold;">✅ المدفوع مسبقاً</small>
+                                <p style="margin: 5px 0; font-size: 18px; font-weight: bold; color: #0c5460;" id="totalPayments">0.00</p>
+                            </div>
+                            <div class="summary-item" style="background: #e2e3e5; padding: 12px; border-radius: 6px; text-align: center; border-left: 4px solid #6c757d;">
+                                <small style="color: #495057; font-weight: bold;">💵 صافي المبلغ</small>
+                                <p style="margin: 5px 0; font-size: 20px; font-weight: bold; color: #495057;" id="netAmount">0.00</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- جدول تفاصيل الحضور المالي -->
+                    <div class="financial-attendance-details" style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #dee2e6;">
+                        <h4 style="color: #495057; margin-top: 0;">📋 تفاصيل الحضور المالي</h4>
+                        <div class="table-container">
+                            <table id="financialAttendanceTable">
+                                <thead>
+                                    <tr>
+                                        <th>التاريخ</th>
+                                        <th>اليوم</th>
+                                        <th>الحضور</th>
+                                        <th>الانصراف</th>
+                                        <th>ساعات العمل</th>
+                                        <th>قيمة اليوم</th>
+                                        <th>الحالة</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="financialAttendanceTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- تفاصيل الخصومات والسلف -->
+                    <div class="financial-transactions" style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #dee2e6;">
+                        <h4 style="color: #495057; margin-top: 0;">💼 العمليات المالية</h4>
+                        <div class="table-container">
+                            <table id="financialTransactionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>التاريخ</th>
+                                        <th>النوع</th>
+                                        <th>المبلغ</th>
+                                        <th>السبب</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="financialTransactionsTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- أزرار العمليات العصرية -->
+                    <div class="financial-actions" style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 24px 0;">
+                        <button onclick="printEmployeeFinancialReport()" class="modern-btn">
+                            <i class="icon">🖨️</i>
+                            <span>طباعة البيان</span>
+                        </button>
+                        <button onclick="exportEmployeeFinancialReport()" class="modern-btn">
+                            <i class="icon">📊</i>
+                            <span>تصدير Excel</span>
+                        </button>
+                        <button onclick="showAllEmployeeFinancialData()" class="modern-btn">
+                            <i class="icon">📋</i>
+                            <span>عرض الكل</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- إعدادات Supabase -->
+        <div class="tab-content" id="supabaseConfig">
+            <div class="section">
+                <h3>🚀 إعدادات Supabase</h3>
+                <div class="config-card">
+                    <div class="supabase-intro">
+                        <div class="intro-text">
+                            <h4>🎯 لماذا Supabase؟</h4>
+                            <ul>
+                                <li>✅ قاعدة بيانات PostgreSQL حقيقية</li>
+                                <li>✅ مجاني للأبد - 500 MB</li>
+                                <li>✅ سرعة فائقة وأداء ممتاز</li>
+                                <li>✅ أمان عالي مع Row Level Security</li>
+                                <li>✅ Real-time - تحديث فوري للبيانات</li>
+                                <li>✅ لا توجد قيود على الاستخدام</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="setup-status">
+                        <h4>📊 حالة النظام</h4>
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <span class="status-label">حالة الاتصال:</span>
+                                <span class="status-value" id="supabaseConnectionStatus">جاري التحقق...</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">قاعدة البيانات:</span>
+                                <span class="status-value" id="supabaseDatabaseStatus">غير متصل</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">الجداول:</span>
+                                <span class="status-value" id="supabaseTablesStatus">غير جاهزة</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="config-section">
+                        <h4>⚙️ إعداد الاتصال</h4>
+                        <div class="config-inputs">
+                            <div class="form-group">
+                                <label for="supabaseUrl">Project URL:</label>
+                                <input type="url" id="supabaseUrl" 
+                                       placeholder="https://your-project.supabase.co"
+                                       style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                            </div>
+                            <div class="form-group">
+                                <label for="supabaseKey">Anon Public Key:</label>
+                                <input type="password" id="supabaseKey" 
+                                       placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                                       style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                                <small>هذا المفتاح آمن - يمكن استخدامه في المتصفح</small>
+                            </div>
+                        </div>
+                        
+                        <div class="button-group">
+                            <button onclick="saveSupabaseConfig()" class="action-btn success">
+                                💾 حفظ الإعدادات
+                            </button>
+                            <button onclick="testSupabaseConnection()" class="action-btn">
+                                🔍 اختبار الاتصال
+                            </button>
+                            <button onclick="setupSupabaseTables()" class="action-btn">
+                                🛠️ إعداد الجداول
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="migration-section">
+                        <h4>🔄 نقل البيانات</h4>
+                        <p>إذا كان لديك بيانات في النظام القديم، يمكن نقلها تلقائياً:</p>
+                        <div class="button-group">
+                            <button onclick="migrateData()" class="action-btn" style="background: #28a745;">
+                                📦 نقل البيانات من النظام القديم
+                            </button>
+                            <button onclick="cleanLocalDataManual()" class="action-btn" style="background: #ffc107;">
+                                🧹 تنظيف البيانات المحلية
+                            </button>
+                            <button onclick="clearLocalData()" class="action-btn" style="background: #dc3545;">
+                                🗑️ مسح جميع البيانات المحلية
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="setup-guide">
+                        <h4>📋 دليل الإعداد السريع</h4>
+                        <div class="steps">
+                            <div class="step">
+                                <span class="step-number">1</span>
+                                <div class="step-content">
+                                    <strong>إنشاء مشروع جديد:</strong>
+                                    <p>اذهب إلى <a href="https://supabase.com" target="_blank">supabase.com</a> وأنشئ حساب مجاني</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <span class="step-number">2</span>
+                                <div class="step-content">
+                                    <strong>إنشاء مشروع:</strong>
+                                    <p>انقر "New Project" واختر اسم واختر كلمة مرور قوية</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <span class="step-number">3</span>
+                                <div class="step-content">
+                                    <strong>الحصول على المفاتيح:</strong>
+                                    <p>اذهب إلى Settings → API وانسخ Project URL و anon public key</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <span class="step-number">4</span>
+                                <div class="step-content">
+                                    <strong>إنشاء الجداول:</strong>
+                                    <p>انسخ وأجر الكود SQL أدناه في SQL Editor</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="sql-section">
+                        <h4>💾 كود SQL لإنشاء الجداول</h4>
+                        <p>انسخ هذا الكود وأجره في SQL Editor في Supabase:</p>
+                        <div class="sql-code">
+                            <pre id="sqlCode">-- إنشاء جدول الفروع
+CREATE TABLE branches (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    address TEXT,
+    latitude DECIMAL,
+    longitude DECIMAL,
+    radius INTEGER DEFAULT 100,
+    wifi_networks TEXT[], -- شبكات WiFi المقبولة للفرع
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- إنشاء جدول الموظفين
+CREATE TABLE employees (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    position TEXT NOT NULL,
+    salary DECIMAL NOT NULL,
+    currency TEXT DEFAULT 'SAR',
+    branch_id UUID REFERENCES branches(id),
+    role TEXT DEFAULT 'employee',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- إنشاء جدول الحضور
+CREATE TABLE attendance (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+    employee_name TEXT NOT NULL,
+    date DATE NOT NULL,
+    check_in TIME,
+    check_out TIME,
+    total_hours DECIMAL DEFAULT 0,
+    time_display TEXT,
+    location TEXT,
+    distance DECIMAL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(employee_id, date)
+);
+
+-- إنشاء جدول الشؤون المالية
+CREATE TABLE finances (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+    employee_name TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('deduction', 'advance', 'payment')),
+    amount DECIMAL NOT NULL,
+    reason TEXT,
+    date DATE NOT NULL,
+    week_paid TEXT, -- الأسبوع المدفوع عنه (فقط لنوع payment)
+    created_at TIMESTAMP DEFAULT NOW()
+);</pre>
+                        </div>
+                        <button onclick="copySQLCode()" class="action-btn" style="background: #6f42c1;">
+                            📋 نسخ الكود
+                        </button>
+                        
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #ffc107;">
+                            <h6 style="margin-top: 0; color: #856404;">🔧 تحديث الجداول الموجودة</h6>
+                            <p style="margin: 5px 0; font-size: 14px;">إذا كانت الجداول موجودة بالفعل، استخدم هذا الكود لإضافة الميزات الجديدة:</p>
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 3px; font-family: monospace; font-size: 13px; margin: 10px 0;">
+                                -- إضافة دعم شبكات WiFi للفروع<br>
+                                ALTER TABLE branches ADD COLUMN wifi_networks TEXT[];<br><br>
+                                -- إضافة دعم تسليم الرواتب<br>
+                                ALTER TABLE finances ADD COLUMN week_paid TEXT;<br>
+                                ALTER TABLE finances DROP CONSTRAINT IF EXISTS finances_type_check;<br>
+                                ALTER TABLE finances ADD CONSTRAINT finances_type_check CHECK (type IN ('deduction', 'advance', 'payment'));
+                            </div>
+                            <small style="color: #856404;">💡 هذا سيضيف دعم شبكات WiFi وتسليم الرواتب للجداول الموجودة</small>
+                        </div>
+                    </div>
+                    
+                    <div class="benefits-section">
+                        <h4>🎯 مميزات استخدام Supabase</h4>
+                        <div class="benefits-grid">
+                            <div class="benefit-item">
+                                <div class="benefit-icon">⚡</div>
+                                <div class="benefit-text">
+                                    <strong>سرعة فائقة</strong>
+                                    <p>أسرع 10 مرات من Google Sheets</p>
+                                </div>
+                            </div>
+                            <div class="benefit-item">
+                                <div class="benefit-icon">🔒</div>
+                                <div class="benefit-text">
+                                    <strong>أمان عالي</strong>
+                                    <p>Row Level Security مدمج</p>
+                                </div>
+                            </div>
+                            <div class="benefit-item">
+                                <div class="benefit-icon">🔄</div>
+                                <div class="benefit-text">
+                                    <strong>Real-time</strong>
+                                    <p>تحديث فوري للبيانات</p>
+                                </div>
+                            </div>
+                            <div class="benefit-item">
+                                <div class="benefit-icon">💰</div>
+                                <div class="benefit-text">
+                                    <strong>مجاني مدى الحياة</strong>
+                                    <p>500 MB + 2 GB bandwidth</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4/dist/umd/supabase.min.js"></script>
+    
+    <!-- Supabase Scripts -->
+    <script src="supabase-config.js"></script>
+    <script src="supabase-manager.js"></script>
+    <script src="supabase-functions.js"></script>
+    <script src="script.js"></script>
+    
+    <!-- Shahba Enhancements -->
+    <script src="shahba-enhancements.js"></script>
+    
+</body>
+</html> 
